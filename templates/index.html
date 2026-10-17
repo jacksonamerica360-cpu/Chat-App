@@ -5,26 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jackson Chatroom</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+   <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jackson Chatroom</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
-        {% raw %}
-        body{font-family:'Segoe UI',sans-serif;background:#121212;color:white;display:flex;flex-direction:column;align-items:center;min-height:100vh;margin:0;padding:20px;box-sizing:border-box}
-        header{text-align:center;margin-bottom:20px;width:100%}
-       .card{background:#1e1e1e;padding:25px;border-radius:12px;width:90%;max-width:900px;box-shadow:0 4px 15px rgba(0,0,0,0.5)}
-        h2{text-align:center;color:#00e676;margin-top:0}
-        input,button{width:100%;padding:12px;margin-top:10px;border-radius:6px;border:none;box-sizing:border-box}
-        input{background:#2a2a2a;color:white;border:1px solid #444}
-        button{background:#00e676;color:black;font-weight:bold;cursor:pointer}
-        button:hover{background:#00c853}
-        #chat-box{height:450px;overflow-y:auto;background:#2a2a2a;border-radius:6px;padding:15px;margin-bottom:10px}
-       .message{margin-bottom:10px;font-size:15px;word-break:break-word}
-       .message img{max-width:200px;border-radius:8px;margin-top:5px;display:block}
-       .message audio{margin-top:5px;width:250px}
-       .system{color:#888;font-style:italic;text-align:center}
-       .hidden{display:none}
-       .input-row{display:flex;gap:8px;margin-top:10px}
-       .input-row input{flex:1}
-       .input-row button{width:50px}
-        {% endraw %}
+    {% raw %}
+    body{font-family:'Segoe UI',sans-serif;background:#121212;color:white;display:flex;flex-direction:column;align-items:center;min-height:100vh;margin:0;padding:20px;box-sizing:border-box}
+    header{text-align:center;margin-bottom:20px;width:100%}
+    .card{background:#1e1e1e;padding:25px;border-radius:12px;width:90%;max-width:900px;box-shadow:0 4px 15px rgba(0,0,0,0.5)}
+    h2{text-align:center;color:#00e676;margin-top:0}
+    input,button{width:100%;padding:12px;margin-top:10px;border-radius:6px;border:none;box-sizing:border-box}
+    input{background:#2a2a2a;color:white;border:1px solid #444}
+    button{background:#00e676;color:black;font-weight:bold;cursor:pointer}
+    button:hover{background:#00c853}
+    #chat-box{height:450px;overflow-y:auto;background:#2a2a2a;border-radius:6px;padding:15px;margin-bottom:10px}
+    .message{margin-bottom:10px;font-size:15px;word-break:break-word}
+    .message img{max-width:200px;border-radius:8px;margin-top:5px;display:block}
+    .message audio{margin-top:5px;width:250px}
+    .system{color:#888;font-style:italic;text-align:center}
+    .hidden{display:none}
+    .input-row{display:flex;gap:8px;margin-top:10px}
+    .input-row input{flex:1}
+    .input-row button{width:50px}
+    @media(max-width:600px){#chat-box{height:35dvh;max-height:280px}}
+    {% endraw %}
+    </style>
+</head>
         @media(max-width:600px){#chat-box{height:35dvh;max-height:280px}}
     </style>
 </head>
