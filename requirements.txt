@@ -1,4 +1,4 @@
-flask
-gunicorn
+Flask
 flask-socketio
+gunicorn
 
