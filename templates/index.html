@@ -6,82 +6,84 @@
     <title>CS Class Chatroom</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #000000;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
-        }
+    {% raw %}
+    body {
+        font-family: 'Segoe UI', sans-serif;
+        background-color: #000000;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 20px;
+        box-sizing: border-box;
+    }
 
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-            width: 100%;
-        }
+    header {
+        text-align: center;
+        margin-bottom: 20px;
+        width: 100%;
+    }
 
-        .card {
-            background: #0a0a0a;
-            border: 1px solid #222222;
-            padding: 25px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 900px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.9);
-            box-sizing: border-box;
-        }
+    .card {
+        background: #0a0a0a;
+        border: 1px solid #222222;
+        padding: 25px;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 900px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.9);
+        box-sizing: border-box;
+    }
 
-        h2 { text-align: center; color: #00e676; margin-top: 0; }
-        
-        input, button { 
-            width: 100%; 
-            padding: 12px; 
-            margin-top: 10px; 
-            border-radius: 6px; 
-            border: none; 
-            box-sizing: border-box; 
-        }
+    h2 { text-align: center; color: #00e676; margin-top: 0; }
 
-        input { 
-            background: #000000;
-            color: #ffffff; 
-            border: 1px solid #333333; 
-            font-size: 15px;
-        }
+    input, button {
+        width: 100%;
+        padding: 12px;
+        margin-top: 10px;
+        border-radius: 6px;
+        border: none;
+        box-sizing: border-box;
+    }
 
-        input:focus {
-            outline: 1px solid #00e676;
-            border-color: #00e676;
-        }
+    input {
+        background: #000000;
+        color: #ffffff;
+        border: 1px solid #333333;
+        font-size: 15px;
+    }
 
-        button { 
-            background: #00e676; 
-            color: black; 
-            font-weight: bold; 
-            cursor: pointer; 
-            font-size: 15px;
-        }
+    input:focus {
+        outline: 1px solid #00e676;
+        border-color: #00e676;
+    }
 
-        button:hover { background: #00c853; }
+    button {
+        background: #00e676;
+        color: black;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 15px;
+    }
 
-        #chat-box {
-            height: 450px;
-            overflow-y: auto;
-            background: #000000;
-            border: 1px solid #222222;
-            border-radius: 6px;
-            padding: 15px;
-            margin-bottom: 10px;
-        }
+    button:hover { background: #00c853; }
 
-        .message { margin-bottom: 8px; font-size: 15px; word-wrap: break-word; color: #ffffff; }
-        .system { color: #888888; font-style: italic; text-align: center; }
-        .hidden { display: none; }
+    #chat-box {
+        height: 450px;
+        overflow-y: auto;
+        background: #000000;
+        border: 1px solid #222222;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 10px;
+    }
+
+    .message { margin-bottom: 8px; font-size: 15px; word-wrap: break-word; color: #ffffff; }
+    .system { color: #888888; font-style: italic; text-align: center; }
+    .hidden { display: none; }
+    {% endraw %}
     </style>
 </head>
 <body>
@@ -178,7 +180,7 @@
                 document.getElementById('chat-card').classList.remove('hidden');
 
                 // Emit event to Python backend
-                socket.emit('join_room', { username: name, user: name });
+                socket.emit('join_room', { username: name });
             }
         }
 
@@ -187,7 +189,7 @@
             const msgInput = document.getElementById('message-input');
             const msg = msgInput.value.trim();
             if (msg) {
-                socket.emit('send_message', { user: currentUser, username: currentUser, msg: msg });
+                socket.emit('send_message', { user: currentUser, msg: msg });
                 msgInput.value = '';
                 document.getElementById('typing-indicator').innerText = '';
             }
@@ -220,13 +222,6 @@
 
             if (data.user !== currentUser && data.user !== 'System') {
                 playBeepSound();
-
-                if ("Notification" in window && Notification.permission === "granted" && document.hidden) {
-                    new Notification(data.user, {
-                        body: data.msg,
-                        icon: "https://cdn-icons-png.flaticon.com/512/134/134937.png"
-                    });
-                }
             }
 
             const chatBox = document.getElementById('chat-box');
