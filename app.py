@@ -27,13 +27,13 @@ def handle_disconnect():
     active_users = max(0, active_users - 1)
     emit('update_user_count', {'count': active_users}, broadcast=True)
 
-# 4. Handle user joining chat room with Loudspeaker symbol
+# 4. Handle user joining chat room
 @socketio.on('join_room')
 def handle_join(data):
     username = data.get('username', 'Anonymous').strip()
     if username:
         emit('join_response', {'success': True, 'username': username})
-        emit('receive_message', {'user': 'System', 'msg': f'📢 {username} joined the chat!'}, broadcast=True)
+        emit('receive_message', {'user': 'System', 'msg': f'🎉 {username} joined the chat!'}, broadcast=True)
 
 # 5. Handle live typing indicator
 @socketio.on('typing')
