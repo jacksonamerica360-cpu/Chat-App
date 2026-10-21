@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CS Class Chatroom</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', sans-serif;
-            background-color: #121212;
+            background-color: #000000;
             color: white;
             display: flex;
             flex-direction: column;
@@ -26,37 +26,45 @@
         }
 
         .card {
-            background: #1e1e1e;
+            background: #0a0a0a;
+            border: 1px solid #222222;
             padding: 25px;
             border-radius: 12px;
             width: 90%;
             max-width: 900px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.9);
             box-sizing: border-box;
         }
 
         h2 { text-align: center; color: #00e676; margin-top: 0; }
-
-        input, button {
-            width: 100%;
-            padding: 12px;
-            margin-top: 10px;
-            border-radius: 6px;
-            border: none;
-            box-sizing: border-box;
+        
+        input, button { 
+            width: 100%; 
+            padding: 12px; 
+            margin-top: 10px; 
+            border-radius: 6px; 
+            border: none; 
+            box-sizing: border-box; 
         }
 
-        input {
-            background: #2a2a2a;
-            color: white;
-            border: 1px solid #444;
+        input { 
+            background: #000000;
+            color: #ffffff; 
+            border: 1px solid #333333; 
+            font-size: 15px;
         }
 
-        button {
-            background: #00e676;
-            color: black;
-            font-weight: bold;
-            cursor: pointer;
+        input:focus {
+            outline: 1px solid #00e676;
+            border-color: #00e676;
+        }
+
+        button { 
+            background: #00e676; 
+            color: black; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 15px;
         }
 
         button:hover { background: #00c853; }
@@ -64,33 +72,16 @@
         #chat-box {
             height: 450px;
             overflow-y: auto;
-            background: #2a2a2a;
+            background: #000000;
+            border: 1px solid #222222;
             border-radius: 6px;
             padding: 15px;
             margin-bottom: 10px;
         }
 
-        .message { margin-bottom: 8px; font-size: 15px; }
-        .system { color: #888; font-style: italic; text-align: center; }
+        .message { margin-bottom: 8px; font-size: 15px; word-wrap: break-word; color: #ffffff; }
+        .system { color: #888888; font-style: italic; text-align: center; }
         .hidden { display: none; }
-
-        /* Fix mobile keyboard screen dimension without changing desktop UI */
-        @media (max-width: 600px) {
-            body {
-                padding: 10px;
-            }
-            .card {
-                padding: 15px;
-                width: 100%;
-            }
-            #chat-box {
-                height: 35dvh;
-                max-height: 280px;
-            }
-            header {
-                margin-bottom: 10px;
-            }
-        }
     </style>
 </head>
 <body>
@@ -111,7 +102,7 @@
         🟢 Active Users: <span id="online-count">0</span>
     </div>
 
-    <!-- Login Card -->
+    <!-- Login Card (Username Input Screen) -->
     <div id="login-card" class="card">
         <h2>CS Class Chatroom</h2>
         <p style="text-align:center; font-size:13px; color:#aaa;">Enter your name to start chatting</p>
@@ -121,7 +112,7 @@
 
     <!-- Chat Card Screen -->
     <div id="chat-card" class="card hidden">
-        <h2>CS Class Chat</h2>
+        <h2>CS Group Chat</h2>
         <div id="chat-box"></div>
 
         <!-- Typing Indicator -->
@@ -137,7 +128,7 @@
         let audioCtx = null;
         let typingTimer;
 
-        // Sound Generator
+        // Sound Notification Generator
         function playBeepSound() {
             try {
                 if (!audioCtx) {
@@ -164,12 +155,14 @@
             }
         }
 
-        // Handle Enter key on Login screen
+        // KeyPress Handler for Login Box
         function handleLoginKeyPress(e) {
-            if (e.key === 'Enter') login();
+            if (e.key === 'Enter') {
+                login();
+            }
         }
 
-        // Login Logic
+        // Login Function: Immediately transitions UI and emits to Python server
         function login() {
             const name = document.getElementById('username-input').value.trim();
             if (name !== "") {
@@ -180,11 +173,11 @@
                     Notification.requestPermission();
                 }
 
-                // Transition UI screen
+                // Instantly switch cards visually
                 document.getElementById('login-card').classList.add('hidden');
                 document.getElementById('chat-card').classList.remove('hidden');
 
-                // Send username event to Python backend
+                // Emit event to Python backend
                 socket.emit('join_room', { username: name, user: name });
             }
         }
@@ -204,21 +197,11 @@
             if (e.key === 'Enter') sendMessage();
         }
 
-        // Typing Indicator Input Listener
+        // Typing Indicator Listener
         document.getElementById('message-input').addEventListener('input', function() {
             if (currentUser) {
                 socket.emit('typing', { user: currentUser });
             }
-        });
-
-        // Mobile Focus Scroll Listener
-        document.getElementById('message-input').addEventListener('focus', function() {
-            setTimeout(function() {
-                const chatBox = document.getElementById('chat-box');
-                if (chatBox) {
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                }
-            }, 300);
         });
 
         socket.on('display_typing', function(data) {
@@ -261,7 +244,7 @@
             chatBox.scrollTop = chatBox.scrollHeight;
         });
 
-        // Online Count Listener
+        // Online User Count Listener
         socket.on('update_user_count', function(data) {
             document.getElementById('online-count').innerText = data.count;
         });
