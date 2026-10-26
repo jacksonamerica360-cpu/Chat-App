@@ -6,10 +6,11 @@
     name="viewport"
     content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content"
   >
+
   <title>CS Class Chatroom</title>
 
-  <!-- Flask-SocketIO provides the matching Socket.IO version -->
-  <script src="/socket.io/socket.io.js"></script>
+  <!-- Keep this CDN version so the Join button works -->
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
   <style>
     body {
@@ -99,7 +100,6 @@
       display: none;
     }
 
-    /* Join pop-up */
     #toast {
       display: none;
       position: fixed;
@@ -139,7 +139,10 @@
 <body>
   <header>
     <h1 style="margin-bottom: 5px;">CS Class Chatroom</h1>
-    <h2 style="margin-top: 0; color: #00e676;">Designed by Jackson America Inc.</h2>
+
+    <h2 style="margin-top: 0; color: #00e676;">
+      Designed by Jackson America Inc.
+    </h2>
 
     <p style="margin: 2px 0; font-size: 1.1em; color: #ccc;">
       Stanford, Silicon Valley, California, The United States of America
@@ -201,14 +204,6 @@
     let currentUser = "";
     let audioCtx = null;
     let typingTimer;
-
-    socket.on("connect", function () {
-      console.log("Connected to chat server");
-    });
-
-    socket.on("connect_error", function (error) {
-      console.error("Cannot connect to the chat server:", error);
-    });
 
     function playBeepSound() {
       try {
@@ -272,10 +267,6 @@
       document.getElementById("login-card").classList.add("hidden");
       document.getElementById("chat-card").classList.remove("hidden");
 
-      /*
-        Sends both field names so this HTML works with either Python version:
-        msg/message and user/username.
-      */
       socket.emit("join_room", {
         username: name,
         user: name
@@ -293,7 +284,8 @@
       }
 
       /*
-        Sends both msg and message so it matches either server version.
+        Sends both "msg" and "message".
+        This works with either Python version.
       */
       socket.emit("send_message", {
         user: currentUser,
@@ -319,13 +311,6 @@
           username: currentUser
         });
       }
-    });
-
-    document.getElementById("message-input").addEventListener("focus", function () {
-      setTimeout(function () {
-        const chatBox = document.getElementById("chat-box");
-        chatBox.scrollTop = chatBox.scrollHeight;
-      }, 300);
     });
 
     function showMessage(user, message) {
@@ -368,8 +353,7 @@
     });
 
     /*
-      Handles your original Python server, which sends:
-      { user: "...", msg: "..." }
+      Handles chat messages from either Python version.
     */
     socket.on("receive_message", function (data) {
       document.getElementById("typing-indicator").innerText = "";
@@ -401,8 +385,7 @@
     });
 
     /*
-      Handles the improved Python server, which sends:
-      { message: "David connected", kind: "connected" }
+      Handles the improved Python server's join/leave notifications.
     */
     socket.on("system_message", function (data) {
       showMessage("System", data.message);
@@ -417,6 +400,10 @@
 
     socket.on("update_user_count", function (data) {
       document.getElementById("online-count").innerText = data.count;
+    });
+
+    socket.on("connect_error", function (error) {
+      console.log("Chat server connection error:", error);
     });
   </script>
 </body>
