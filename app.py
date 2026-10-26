@@ -1,70 +1,98 @@
 import os
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'cs_chat_secret_key'
+app.config["SECRET_KEY"] = "cs_chat_secret_key"
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Track active connected users
-active_users = 0
+# Stores: connection ID -> username
+connected_users = {}
 
 
-@app.route('/')
+@app.route("/")
 def index():
-  return render_template('index.html')
+    return render_template("index.html")
 
 
-# Triggered automatically when a user opens the app
-@socketio.on('connect')
-def handle_connect():
-  global active_users
-  active_users += 1
-  emit('update_user_count', {'count': active_users}, broadcast=True)
-
-
-# Triggered automatically when a user closes or leaves the app
-@socketio.on('disconnect')
-def handle_disconnect():
-  global active_users
-  active_users = max(0, active_users - 1)
-  emit('update_user_count', {'count': active_users}, broadcast=True)
-
-
-# Handle user joining chat room and broadcasting notification
-@socketio.on('join_room')
+@socketio.on("join_room")
 def handle_join(data):
-  username = data.get('username', 'Anonymous').strip()
-  if username:
-    emit('join_response', {'success': True, 'username': username})
-    emit(
-        'receive_message',
-        {'user': 'System', 'msg': f'🎉 {username} joined the chat!'},
-        broadcast=True,
+    username = data.get("username", "").strip()
+
+    if not username:
+        return
+
+    # Remember the user's name on the server
+    connected_users[request.sid] = username
+
+    socketio.emit(
+        "receive_message",
+        {
+            "user": "System",
+            "msg": f"{username} connected"
+        }
+    )
+
+    socketio.emit(
+        "update_user_count",
+        {"count": len(connected_users)}
     )
 
 
-# Handle live typing indicator
-@socketio.on('typing')
+@socketio.on("typing")
 def handle_typing(data):
-  emit(
-      'display_typing',
-      {'user': data.get('user')},
-      broadcast=True,
-      include_self=False,
-  )
+    # Use the server's saved username, not the name sent by the browser
+    username = connected_users.get(request.sid)
+
+    if username:
+        emit(
+            "display_typing",
+            {"user": username},
+            broadcast=True,
+            include_self=False
+        )
 
 
-# Handle sending and receiving chat messages
-@socketio.on('send_message')
+@socketio.on("send_message")
 def handle_message(data):
-  emit(
-      'receive_message',
-      {'user': data.get('user'), 'msg': data.get('msg')},
-      broadcast=True,
-  )
+    username = connected_users.get(request.sid)
+    message = data.get("msg", "").strip()
+
+    if username and message:
+        socketio.emit(
+            "receive_message",
+            {
+                "user": username,
+                "msg": message
+            }
+        )
 
 
-if __name__ == '__main__':
-  port = int(os.environ.get('PORT', 5000))
-  socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)
+@socketio.on("disconnect")
+def handle_disconnect():
+    username = connected_users.pop(request.sid, None)
+
+    if username:
+        socketio.emit(
+            "receive_message",
+            {
+                "user": "System",
+                "msg": f"{username} disconnected"
+            }
+        )
+
+        socketio.emit(
+            "update_user_count",
+            {"count": len(connected_users)}
+        )
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    socketio.run(
+        app,
+        host="0.0.0.0",
+        port=port,
+        debug=False,
+        allow_unsafe_werkzeug=True
+    )
