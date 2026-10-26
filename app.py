@@ -1,12 +1,19 @@
 import os
+
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "cs_chat_secret_key"
-socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Stores: connection ID -> username
+# Works well on Windows
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode="threading"
+)
+
+# Saves each connected browser's name
 connected_users = {}
 
 
@@ -15,33 +22,59 @@ def index():
     return render_template("index.html")
 
 
-@socketio.on("join_room")
-def handle_join(data):
-    username = data.get("username", "").strip()
-
-    if not username:
-        return
-
-    # Remember the user's name on the server
-    connected_users[request.sid] = username
-
-    socketio.emit(
-        "receive_message",
-        {
-            "user": "System",
-            "msg": f"{username} connected"
-        }
-    )
-
+def send_user_count():
     socketio.emit(
         "update_user_count",
         {"count": len(connected_users)}
     )
 
 
+@socketio.on("join_room")
+def join_room(data):
+    username = data.get("username", "").strip()
+
+    if not username:
+        return
+
+    connected_users[request.sid] = username
+
+    # Shows: Jackson connected
+    socketio.emit(
+        "receive_message",
+        {
+            "user": "System",
+            "msg": f"{username} connected",
+            "message": f"{username} connected"
+        }
+    )
+
+    send_user_count()
+
+
+@socketio.on("send_message")
+def send_message(data):
+    username = connected_users.get(request.sid)
+
+    # Supports both the old "msg" and new "message" names
+    message = data.get("message") or data.get("msg") or ""
+    message = message.strip()
+
+    if not username or not message:
+        return
+
+    # Shows: Jackson: Hello
+    socketio.emit(
+        "receive_message",
+        {
+            "user": username,
+            "msg": message,
+            "message": message
+        }
+    )
+
+
 @socketio.on("typing")
-def handle_typing(data):
-    # Use the server's saved username, not the name sent by the browser
+def typing(data):
     username = connected_users.get(request.sid)
 
     if username:
@@ -53,23 +86,8 @@ def handle_typing(data):
         )
 
 
-@socketio.on("send_message")
-def handle_message(data):
-    username = connected_users.get(request.sid)
-    message = data.get("msg", "").strip()
-
-    if username and message:
-        socketio.emit(
-            "receive_message",
-            {
-                "user": username,
-                "msg": message
-            }
-        )
-
-
 @socketio.on("disconnect")
-def handle_disconnect():
+def disconnect():
     username = connected_users.pop(request.sid, None)
 
     if username:
@@ -77,18 +95,17 @@ def handle_disconnect():
             "receive_message",
             {
                 "user": "System",
-                "msg": f"{username} disconnected"
+                "msg": f"{username} disconnected",
+                "message": f"{username} disconnected"
             }
         )
 
-        socketio.emit(
-            "update_user_count",
-            {"count": len(connected_users)}
-        )
+        send_user_count()
 
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
+
     socketio.run(
         app,
         host="0.0.0.0",
