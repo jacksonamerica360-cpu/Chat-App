@@ -1,270 +1,423 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
-    <title>CS Class Chatroom</title>
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #121212;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content"
+  >
+  <title>CS Class Chatroom</title>
 
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-            width: 100%;
-        }
+  <!-- Flask-SocketIO provides the matching Socket.IO version -->
+  <script src="/socket.io/socket.io.js"></script>
 
-        .card {
-            background: #1e1e1e;
-            padding: 25px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 900px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-            box-sizing: border-box;
-        }
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background-color: #121212;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
 
-        h2 { text-align: center; color: #00e676; margin-top: 0; }
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+      width: 100%;
+    }
 
-        input, button {
-            width: 100%;
-            padding: 12px;
-            margin-top: 10px;
-            border-radius: 6px;
-            border: none;
-            box-sizing: border-box;
-        }
+    .card {
+      background: #1e1e1e;
+      padding: 25px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 900px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+      box-sizing: border-box;
+    }
 
-        input {
-            background: #2a2a2a;
-            color: white;
-            border: 1px solid #444;
-        }
+    h2 {
+      text-align: center;
+      color: #00e676;
+      margin-top: 0;
+    }
 
-        button {
-            background: #00e676;
-            color: black;
-            font-weight: bold;
-            cursor: pointer;
-        }
+    input,
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 6px;
+      border: none;
+      box-sizing: border-box;
+    }
 
-        button:hover { background: #00c853; }
+    input {
+      background: #2a2a2a;
+      color: white;
+      border: 1px solid #444;
+    }
 
-        #chat-box {
-            height: 450px;
-            overflow-y: auto;
-            background: #2a2a2a;
-            border-radius: 6px;
-            padding: 15px;
-            margin-bottom: 10px;
-        }
+    button {
+      background: #00e676;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
 
-        .message { margin-bottom: 8px; font-size: 15px; }
-        .system { color: #888; font-style: italic; text-align: center; }
-        .hidden { display: none; }
+    button:hover {
+      background: #00c853;
+    }
 
-        /* Fix mobile keyboard screen dimension without changing desktop UI */
-        @media (max-width: 600px) {
-            body {
-                padding: 10px;
-            }
-            .card {
-                padding: 15px;
-                width: 100%;
-            }
-            #chat-box {
-                height: 35dvh;
-                max-height: 280px;
-            }
-            header {
-                margin-bottom: 10px;
-            }
-        }
-    </style>
+    #chat-box {
+      height: 450px;
+      overflow-y: auto;
+      background: #2a2a2a;
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 10px;
+    }
+
+    .message {
+      margin-bottom: 8px;
+      font-size: 15px;
+      overflow-wrap: break-word;
+    }
+
+    .system {
+      color: #888;
+      font-style: italic;
+      text-align: center;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    /* Join pop-up */
+    #toast {
+      display: none;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      background: #1f3e2d;
+      color: white;
+      border-left: 4px solid #00e676;
+      border-radius: 7px;
+      padding: 14px 18px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+
+      .card {
+        padding: 15px;
+        width: 100%;
+      }
+
+      #chat-box {
+        height: 35dvh;
+        max-height: 280px;
+      }
+
+      header {
+        margin-bottom: 10px;
+      }
+    }
+  </style>
 </head>
+
 <body>
+  <header>
+    <h1 style="margin-bottom: 5px;">CS Class Chatroom</h1>
+    <h2 style="margin-top: 0; color: #00e676;">Designed by Jackson America Inc.</h2>
 
-    <header>
-        <h1 style="margin-bottom: 5px;">CS Class Chatroom</h1>
-        <h2 style="margin-top: 0; color: #00e676;">Designed by Jackson America Inc.</h2>
-        <p style="margin: 2px 0; font-size: 1.1em; color: #ccc;">
-            Stanford, Silicon Valley, California, The United States of America
-        </p>
-        <p style="margin-top: 8px; font-style: italic; color: #aaa;">
-            (Programmer is only 17 years old)
-        </p>
-    </header>
+    <p style="margin: 2px 0; font-size: 1.1em; color: #ccc;">
+      Stanford, Silicon Valley, California, The United States of America
+    </p>
 
-    <!-- Live Active User Counter -->
-    <div style="text-align: center; margin-bottom: 10px; color: #00e676;">
-        🟢 Active Users: <span id="online-count">0</span>
-    </div>
+    <p style="margin-top: 8px; font-style: italic; color: #aaa;">
+      (Programmer is only 17 years old)
+    </p>
+  </header>
 
-    <!-- Login Card -->
-    <div id="login-card" class="card">
-        <h2>CS Class Chatroom</h2>
-        <p style="text-align:center; font-size:13px; color:#aaa;">Enter your name to start chatting</p>
-        <input type="text" id="username-input" placeholder="Type your name (e.g. David, Richard)..." onkeypress="handleLoginKeyPress(event)" autocomplete="off">
-        <button onclick="login()">Join Chat</button>
-    </div>
+  <div style="text-align: center; margin-bottom: 10px; color: #00e676;">
+    🟢 Active Users: <span id="online-count">0</span>
+  </div>
 
-    <!-- Chat Card Screen -->
-    <div id="chat-card" class="card hidden">
-        <h2>CS Group Chat</h2>
-        <div id="chat-box"></div>
+  <div id="login-card" class="card">
+    <h2>CS Class Chatroom</h2>
 
-        <!-- Typing Indicator -->
-        <div id="typing-indicator" style="color: #aaa; font-size: 13px; height: 18px; margin-bottom: 5px; font-style: italic;"></div>
+    <p style="text-align: center; font-size: 13px; color: #aaa;">
+      Enter your name to start chatting
+    </p>
 
-        <input type="text" id="message-input" placeholder="Type a message..." onkeypress="handleKeyPress(event)" autocomplete="off">
-        <button onclick="sendMessage()">Send</button>
-    </div>
+    <input
+      type="text"
+      id="username-input"
+      placeholder="Type your name (e.g. David, Richard)..."
+      onkeypress="handleLoginKeyPress(event)"
+      autocomplete="off"
+    >
 
-    <script>
-        const socket = io();
-        let currentUser = "";
-        let audioCtx = null;
-        let typingTimer;
+    <button onclick="login()">Join Chat</button>
+  </div>
 
-        // Sound Generator
-        function playBeepSound() {
-            try {
-                if (!audioCtx) {
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
+  <div id="chat-card" class="card hidden">
+    <h2>CS Group Chat</h2>
 
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
+    <div id="chat-box"></div>
 
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    <div
+      id="typing-indicator"
+      style="color: #aaa; font-size: 13px; height: 18px; margin-bottom: 5px; font-style: italic;"
+    ></div>
 
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
+    <input
+      type="text"
+      id="message-input"
+      placeholder="Type a message..."
+      onkeypress="handleKeyPress(event)"
+      autocomplete="off"
+    >
 
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.15);
-            } catch (e) {
-                console.log("Audio notification error:", e);
-            }
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    const socket = io();
+
+    let currentUser = "";
+    let audioCtx = null;
+    let typingTimer;
+
+    socket.on("connect", function () {
+      console.log("Connected to chat server");
+    });
+
+    socket.on("connect_error", function (error) {
+      console.error("Cannot connect to the chat server:", error);
+    });
+
+    function playBeepSound() {
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
 
-        // Handle Enter key on Login screen
-        function handleLoginKeyPress(e) {
-            if (e.key === 'Enter') login();
+        if (audioCtx.state === "suspended") {
+          audioCtx.resume();
         }
 
-        // Login Logic
-        function login() {
-            const name = document.getElementById('username-input').value.trim();
-            if (name !== "") {
-                currentUser = name;
-                playBeepSound();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
 
-                if ("Notification" in window && Notification.permission !== "granted") {
-                    Notification.requestPermission();
-                }
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
 
-                // Transition UI screen
-                document.getElementById('login-card').classList.add('hidden');
-                document.getElementById('chat-card').classList.remove('hidden');
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
 
-                // Send username event to Python backend
-                socket.emit('join_room', { username: name, user: name });
-            }
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+      } catch (error) {
+        console.log("Audio notification error:", error);
+      }
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+
+      toast.innerText = message;
+      toast.style.display = "block";
+
+      setTimeout(function () {
+        toast.style.display = "none";
+      }, 3000);
+    }
+
+    function handleLoginKeyPress(event) {
+      if (event.key === "Enter") {
+        login();
+      }
+    }
+
+    function login() {
+      const name = document.getElementById("username-input").value.trim();
+
+      if (!name) {
+        alert("Please enter your name.");
+        return;
+      }
+
+      currentUser = name;
+      playBeepSound();
+
+      if ("Notification" in window && Notification.permission !== "granted") {
+        Notification.requestPermission();
+      }
+
+      document.getElementById("login-card").classList.add("hidden");
+      document.getElementById("chat-card").classList.remove("hidden");
+
+      /*
+        Sends both field names so this HTML works with either Python version:
+        msg/message and user/username.
+      */
+      socket.emit("join_room", {
+        username: name,
+        user: name
+      });
+
+      document.getElementById("message-input").focus();
+    }
+
+    function sendMessage() {
+      const msgInput = document.getElementById("message-input");
+      const msg = msgInput.value.trim();
+
+      if (!msg) {
+        return;
+      }
+
+      /*
+        Sends both msg and message so it matches either server version.
+      */
+      socket.emit("send_message", {
+        user: currentUser,
+        username: currentUser,
+        msg: msg,
+        message: msg
+      });
+
+      msgInput.value = "";
+      document.getElementById("typing-indicator").innerText = "";
+    }
+
+    function handleKeyPress(event) {
+      if (event.key === "Enter") {
+        sendMessage();
+      }
+    }
+
+    document.getElementById("message-input").addEventListener("input", function () {
+      if (currentUser) {
+        socket.emit("typing", {
+          user: currentUser,
+          username: currentUser
+        });
+      }
+    });
+
+    document.getElementById("message-input").addEventListener("focus", function () {
+      setTimeout(function () {
+        const chatBox = document.getElementById("chat-box");
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }, 300);
+    });
+
+    function showMessage(user, message) {
+      if (!message) {
+        return;
+      }
+
+      const chatBox = document.getElementById("chat-box");
+      const msgDiv = document.createElement("div");
+
+      msgDiv.classList.add("message");
+
+      if (user === "System") {
+        msgDiv.classList.add("system");
+        msgDiv.innerText = message;
+      } else {
+        const sender = document.createElement("b");
+
+        sender.style.color = "#00e676";
+        sender.innerText = user + ": ";
+
+        msgDiv.appendChild(sender);
+        msgDiv.appendChild(document.createTextNode(message));
+      }
+
+      chatBox.appendChild(msgDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    socket.on("display_typing", function (data) {
+      const indicator = document.getElementById("typing-indicator");
+
+      indicator.innerText = data.user + " is typing...";
+
+      clearTimeout(typingTimer);
+
+      typingTimer = setTimeout(function () {
+        indicator.innerText = "";
+      }, 2000);
+    });
+
+    /*
+      Handles your original Python server, which sends:
+      { user: "...", msg: "..." }
+    */
+    socket.on("receive_message", function (data) {
+      document.getElementById("typing-indicator").innerText = "";
+
+      const message = data.msg || data.message;
+
+      if (data.user !== currentUser && data.user !== "System") {
+        playBeepSound();
+
+        if (
+          "Notification" in window &&
+          Notification.permission === "granted" &&
+          document.hidden
+        ) {
+          new Notification(data.user, {
+            body: message
+          });
         }
+      }
 
-        // Send Message Logic
-        function sendMessage() {
-            const msgInput = document.getElementById('message-input');
-            const msg = msgInput.value.trim();
-            if (msg) {
-                socket.emit('send_message', { user: currentUser, username: currentUser, msg: msg });
-                msgInput.value = '';
-                document.getElementById('typing-indicator').innerText = '';
-            }
-        }
+      showMessage(data.user, message);
 
-        function handleKeyPress(e) {
-            if (e.key === 'Enter') sendMessage();
-        }
+      if (
+        data.user === "System" &&
+        (message.includes("connected") || message.includes("joined"))
+      ) {
+        showToast(message);
+      }
+    });
 
-        // Typing Indicator Input Listener
-        document.getElementById('message-input').addEventListener('input', function() {
-            if (currentUser) {
-                socket.emit('typing', { user: currentUser });
-            }
-        });
+    /*
+      Handles the improved Python server, which sends:
+      { message: "David connected", kind: "connected" }
+    */
+    socket.on("system_message", function (data) {
+      showMessage("System", data.message);
 
-        // Mobile Focus Scroll Listener
-        document.getElementById('message-input').addEventListener('focus', function() {
-            setTimeout(function() {
-                const chatBox = document.getElementById('chat-box');
-                if (chatBox) {
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                }
-            }, 300);
-        });
+      if (
+        data.kind === "connected" &&
+        data.message !== currentUser + " connected"
+      ) {
+        showToast(data.message);
+      }
+    });
 
-        socket.on('display_typing', function(data) {
-            const indicator = document.getElementById('typing-indicator');
-            indicator.innerText = `${data.user} is typing...`;
-
-            clearTimeout(typingTimer);
-            typingTimer = setTimeout(() => {
-                indicator.innerText = '';
-            }, 2000);
-        });
-
-        // Receive Message Listener
-        socket.on('receive_message', function(data) {
-            document.getElementById('typing-indicator').innerText = '';
-
-            if (data.user !== currentUser && data.user !== 'System') {
-                playBeepSound();
-
-                if ("Notification" in window && Notification.permission === "granted" && document.hidden) {
-                    new Notification(data.user, {
-                        body: data.msg,
-                        icon: "https://cdn-icons-png.flaticon.com/512/134/134937.png"
-                    });
-                }
-            }
-
-            const chatBox = document.getElementById('chat-box');
-            const msgDiv = document.createElement('div');
-            msgDiv.classList.add('message');
-
-            if (data.user === 'System') {
-                msgDiv.classList.add('system');
-                msgDiv.innerText = data.msg;
-            } else {
-                msgDiv.innerHTML = `<b style="color:#00e676">${data.user}:</b> ${data.msg}`;
-            }
-
-            chatBox.appendChild(msgDiv);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        });
-
-        // Online Count Listener
-        socket.on('update_user_count', function(data) {
-            document.getElementById('online-count').innerText = data.count;
-        });
-    </script>
+    socket.on("update_user_count", function (data) {
+      document.getElementById("online-count").innerText = data.count;
+    });
+  </script>
 </body>
 </html>
