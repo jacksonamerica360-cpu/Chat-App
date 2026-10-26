@@ -113,3 +113,5 @@ if __name__ == "__main__":
         debug=False,
         allow_unsafe_werkzeug=True
     )
+python -m pip install --upgrade flask flask-socketio
+python app.py
