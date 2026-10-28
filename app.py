@@ -6,14 +6,12 @@ from flask_socketio import SocketIO, emit
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "cs_chat_secret_key"
 
-# Works well on Windows
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
     async_mode="threading"
 )
 
-# Saves each connected browser's name
 connected_users = {}
 
 
@@ -38,7 +36,6 @@ def join_room(data):
 
     connected_users[request.sid] = username
 
-    # Shows: Jackson connected
     socketio.emit(
         "receive_message",
         {
@@ -55,14 +52,12 @@ def join_room(data):
 def send_message(data):
     username = connected_users.get(request.sid)
 
-    # Supports both the old "msg" and new "message" names
     message = data.get("message") or data.get("msg") or ""
     message = message.strip()
 
     if not username or not message:
         return
 
-    # Shows: Jackson: Hello
     socketio.emit(
         "receive_message",
         {
@@ -113,5 +108,3 @@ if __name__ == "__main__":
         debug=False,
         allow_unsafe_werkzeug=True
     )
-python -m pip install --upgrade flask flask-socketio
-python app.py
