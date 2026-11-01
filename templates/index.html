@@ -199,7 +199,10 @@
   <div id="toast"></div>
 
   <script>
-    const socket = io();
+    // Fixed for Render - forces websocket + polling both
+    const socket = io({
+      transports: ["websocket", "polling"]
+    });
 
     let currentUser = "";
     let audioCtx = null;
@@ -234,10 +237,8 @@
 
     function showToast(message) {
       const toast = document.getElementById("toast");
-
       toast.innerText = message;
       toast.style.display = "block";
-
       setTimeout(function () {
         toast.style.display = "none";
       }, 3000);
@@ -251,12 +252,10 @@
 
     function login() {
       const name = document.getElementById("username-input").value.trim();
-
       if (!name) {
         alert("Please enter your name.");
         return;
       }
-
       currentUser = name;
       playBeepSound();
 
@@ -278,22 +277,15 @@
     function sendMessage() {
       const msgInput = document.getElementById("message-input");
       const msg = msgInput.value.trim();
-
       if (!msg) {
         return;
       }
-
-      /*
-        Sends both "msg" and "message".
-        This works with either Python version.
-      */
       socket.emit("send_message", {
         user: currentUser,
         username: currentUser,
         msg: msg,
         message: msg
       });
-
       msgInput.value = "";
       document.getElementById("typing-indicator").innerText = "";
     }
@@ -317,52 +309,37 @@
       if (!message) {
         return;
       }
-
       const chatBox = document.getElementById("chat-box");
       const msgDiv = document.createElement("div");
-
       msgDiv.classList.add("message");
-
       if (user === "System") {
         msgDiv.classList.add("system");
         msgDiv.innerText = message;
       } else {
         const sender = document.createElement("b");
-
         sender.style.color = "#00e676";
         sender.innerText = user + ": ";
-
         msgDiv.appendChild(sender);
         msgDiv.appendChild(document.createTextNode(message));
       }
-
       chatBox.appendChild(msgDiv);
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
     socket.on("display_typing", function (data) {
       const indicator = document.getElementById("typing-indicator");
-
       indicator.innerText = data.user + " is typing...";
-
       clearTimeout(typingTimer);
-
       typingTimer = setTimeout(function () {
         indicator.innerText = "";
       }, 2000);
     });
 
-    /*
-      Handles chat messages from either Python version.
-    */
     socket.on("receive_message", function (data) {
       document.getElementById("typing-indicator").innerText = "";
-
       const message = data.msg || data.message;
-
       if (data.user !== currentUser && data.user !== "System") {
         playBeepSound();
-
         if (
           "Notification" in window &&
           Notification.permission === "granted" &&
@@ -373,9 +350,7 @@
           });
         }
       }
-
       showMessage(data.user, message);
-
       if (
         data.user === "System" &&
         (message.includes("connected") || message.includes("joined"))
@@ -384,12 +359,8 @@
       }
     });
 
-    /*
-      Handles the improved Python server's join/leave notifications.
-    */
     socket.on("system_message", function (data) {
       showMessage("System", data.message);
-
       if (
         data.kind === "connected" &&
         data.message !== currentUser + " connected"
@@ -404,6 +375,10 @@
 
     socket.on("connect_error", function (error) {
       console.log("Chat server connection error:", error);
+    });
+
+    socket.on("connect", () => {
+      console.log("Connected to server:", socket.id);
     });
   </script>
 </body>
