@@ -14,12 +14,13 @@ def handle_join(data):
     username = data.get('username', 'Anonymous').strip()
     if username:
         emit('join_response', {'success': True, 'username': username})
-        emit('receive_message', {'user': 'System', 'msg': f'🎉{username} joined the chat!'}, broadcast=True)
+        # send to everyone
+        emit('receive_message', {'user': 'System', 'msg': f'{username} joined the chat!'}, broadcast=True)
 
 @socketio.on('send_message')
 def handle_message(data):
-    emit('receive_message', {'user': data['user'], 'msg': data['msg']}, broadcast=True)
+    print(f"Message from {data['user']}: {data['msg']}") # to check in terminal
+    emit('receive_message', {'user': data['user'], 'msg': data['msg']}, broadcast=True, include_self=True)
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
-    # LaptSp is working like server
+    socketio.run(app, debug=True, allow_unsafe_werkzeug=True)
