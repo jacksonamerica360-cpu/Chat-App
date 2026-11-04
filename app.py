@@ -26,7 +26,7 @@ def handle_join(data):
     emit('join_response', {'success': True, 'username': username})
 
     # Notify all users that a new user joined
-    emit('receive_message', {'user': 'System', 'msg': f'{username} joined the chat!'}, broadcast=True)
+    emit('receive_message', {'user': 'System', 'msg': f'{username} joined the chat! 🎉'}, broadcast=True)
 
     # Update active user count for all users
     emit('update_user_count', {'count': len(connected_users)}, broadcast=True)
@@ -49,7 +49,7 @@ def handle_typing(data):
 def handle_disconnect():
     username = connected_users.pop(request.sid, None)
     if username:
-        emit('receive_message', {'user': 'System', 'msg': f'{username} left the chat!'}, broadcast=True)
+        emit('receive_message', {'user': 'System', 'msg': f'{username} left the chat! 👋'}, broadcast=True)
         emit('update_user_count', {'count': len(connected_users)}, broadcast=True)
 
 if __name__ == '__main__':
