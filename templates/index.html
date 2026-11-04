@@ -266,10 +266,21 @@
       document.getElementById("login-card").classList.add("hidden");
       document.getElementById("chat-card").classList.remove("hidden");
 
-      socket.emit("join_room", {
-        username: name,
-        user: name
-      });
+      // Fix: Wait for socket to connect before joining
+      // This prevents join message loss when Render server was sleeping
+      if (socket.connected) {
+        socket.emit("join_room", {
+          username: name,
+          user: name
+        });
+      } else {
+        socket.once("connect", function() {
+          socket.emit("join_room", {
+            username: name,
+            user: name
+          });
+        });
+      }
 
       document.getElementById("message-input").focus();
     }
@@ -379,6 +390,13 @@
 
     socket.on("connect", () => {
       console.log("Connected to server:", socket.id);
+      // Auto re-join if connection dropped after login
+      if (currentUser) {
+        socket.emit("join_room", {
+          username: currentUser,
+          user: currentUser
+        });
+      }
     });
   </script>
 </body>
